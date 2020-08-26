@@ -7,19 +7,11 @@ interface CreateTransactionDTO {
 
   type: 'income' | 'outcome';
 }
-interface FilterDTO {
-  title: string;
-  type: 'income' | 'outcome';
-}
-interface BalanceDTO {
+
+interface Balance {
   income: number;
   outcome: number;
   total: number;
-}
-
-interface Transactions {
-  transactions: Transaction[];
-  balance: BalanceDTO;
 }
 
 class TransactionsRepository {
@@ -29,30 +21,31 @@ class TransactionsRepository {
     this.transactions = [];
   }
 
-  public all({ title, type }: FilterDTO): Transactions {
-    const result = {
-      transactions: this.transactions,
-      balance: this.getBalance(),
-    };
-    return result;
+  public all(): Transaction[] {
+    return this.transactions;
   }
 
   // eslint-disable-next-line class-methods-use-this
-  public getBalance(): BalanceDTO {
-    const income = this.transactions.reduce(function (prev, cur) {
-      if (cur.type === 'income') {
-        return prev + cur.value;
-      }
-      return prev + 0;
-    }, 0);
-    const outcome = this.transactions.reduce(function (prev, cur) {
-      if (cur.type === 'outcome') {
-        return prev + cur.value;
-      }
-      return prev + 0;
-    }, 0);
-    const total = income - outcome;
-    return { income, outcome, total };
+  public getBalance(): Balance {
+    const balance = this.transactions.reduce(
+      (accumulator: Balance, cur: Transaction) => {
+        switch (cur.type) {
+          case 'income':
+            accumulator.income += cur.value;
+            accumulator.total += cur.value;
+            break;
+          case 'outcome':
+            accumulator.outcome += cur.value;
+            accumulator.total -= cur.value;
+            break;
+          default:
+            break;
+        }
+        return accumulator;
+      },
+      { income: 0, outcome: 0, total: 0 },
+    );
+    return balance;
   }
 
   public create({ title, value, type }: CreateTransactionDTO): Transaction {
