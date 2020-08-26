@@ -16,6 +16,15 @@ class CreateTransactionService {
   }
 
   public execute({ title, value, type }: RequestDTO): Transaction {
+    if (value === 0) {
+      throw Error('Value must be greater then zero!');
+    }
+    if (
+      type === 'outcome' &&
+      this.transactionsRepository.getBalance().total < value
+    ) {
+      throw Error('Negative balance!');
+    }
     const transaction = this.transactionsRepository.create({
       title,
       value,
